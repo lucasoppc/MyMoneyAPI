@@ -7,4 +7,5 @@ public interface ICosmosDBService
     Container TransactionsContainer { get; }
     Container AccountsContainer { get; }
     Container TransactionsLeasesContainer { get; }
+    Container UsersContainer { get; }
 }

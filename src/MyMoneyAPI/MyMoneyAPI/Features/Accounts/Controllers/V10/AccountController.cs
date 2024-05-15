@@ -1,5 +1,6 @@
 using System.Net;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyMoneyAPI.Features.Accounts.Requests;
 
@@ -17,6 +18,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreateAccount([FromBody] CreateAccountRequest request)
     {
         var result = await _mediator.Send(request);

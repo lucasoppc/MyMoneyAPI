@@ -11,4 +11,5 @@ public class Account
     public string userId { get; set; }
     public string currency { get; set; }
     public bool isDeleted { get; set; }
+    public decimal amount { get; set; }
 }
