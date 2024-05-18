@@ -18,6 +18,20 @@ public class UserController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Register([FromBody] CreateUserRequest request)
     {
-        return Ok(await _mediator.Send(request));
+        return Ok(await _mediator.Send(request, HttpContext.RequestAborted));
+    }
+
+    [HttpPost]
+    [Route("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        var loginResponse = await _mediator.Send(request, HttpContext.RequestAborted);
+
+        if (string.IsNullOrWhiteSpace(loginResponse.token))
+        {
+            return Unauthorized();
+        }
+        
+        return Ok(loginResponse);
     }
 }

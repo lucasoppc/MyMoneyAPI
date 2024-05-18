@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MediatR;
 using MyMoneyAPI.Features.Accounts.Responses;
 

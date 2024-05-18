@@ -1,0 +1,6 @@
+@MyMoneyAPI_HostAddress = http://localhost:5019
+
+GET {{MyMoneyAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

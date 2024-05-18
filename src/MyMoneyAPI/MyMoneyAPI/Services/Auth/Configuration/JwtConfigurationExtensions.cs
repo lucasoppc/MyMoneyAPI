@@ -15,6 +15,7 @@ public static class JwtConfigurationExtensions
         services.Configure<JwtOptions>(config.GetSection("jwt"));
         services.AddSingleton<IJwtTokenProvider, JwtTokenProvider>();
         services.AddSingleton<IHashService, HashService>();
+        services.AddScoped<IClaimService, ClaimService>();
         
         services.AddAuthentication(options =>
         {

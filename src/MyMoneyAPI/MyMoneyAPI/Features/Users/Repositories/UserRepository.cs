@@ -14,12 +14,12 @@ public class UserRepository : IUserRepository
         _cosmosDbService = cosmosDbService;
     }
     
-    public async Task<UserEntity> CreateUserAsync(UserEntity userEntity)
+    public async Task<UserEntity> CreateUserAsync(UserEntity userEntity, CancellationToken cancellationToken)
     {
-        return await _cosmosDbService.UsersContainer.CreateItemAsync(userEntity);
+        return await _cosmosDbService.UsersContainer.CreateItemAsync(userEntity, cancellationToken: cancellationToken);
     }
 
-    public async Task<UserEntity?> GetUserByEmailAsync(string email)
+    public async Task<UserEntity?> GetUserByEmailAsync(string email, CancellationToken cancellationToken)
     {
         var query = _cosmosDbService.UsersContainer.GetItemLinqQueryable<Models.UserEntity>()
             .Where(u => u.email == email)
@@ -27,15 +27,19 @@ public class UserRepository : IUserRepository
         
         while (query.HasMoreResults)
         {
-            var items = await query.ReadNextAsync();
+            if (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            var items = await query.ReadNextAsync(cancellationToken: cancellationToken);
             return items.FirstOrDefault();
         }
 
         return null;
     }
     
-    public async Task<UserEntity> GetUserByIdAsync(string userId)
+    public async Task<UserEntity> GetUserByIdAsync(string userId, CancellationToken cancellationToken)
     {
-        return await _cosmosDbService.UsersContainer.ReadItemAsync<Models.UserEntity>(userId, new PartitionKey(userId));
+        return await _cosmosDbService.UsersContainer.ReadItemAsync<UserEntity>(userId, new PartitionKey(userId), cancellationToken: cancellationToken);
     }
 }

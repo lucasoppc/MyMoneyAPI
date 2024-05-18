@@ -9,19 +9,27 @@ namespace MyMoneyAPI.Features.Accounts.Handlers;
 public class CreateAccountHandler : IRequestHandler<CreateAccountRequest, CreateAccountResponse>
 {
     private readonly IAccountRepository _accountRepository;
+    private readonly IHttpContextAccessor _contextAccessor;
 
-    public CreateAccountHandler(IAccountRepository accountRepository)
+    public CreateAccountHandler(IAccountRepository accountRepository, IHttpContextAccessor httpContextAccessor)
     {
         _accountRepository = accountRepository;
+        _contextAccessor = httpContextAccessor;
+
     }
     
     public async Task<CreateAccountResponse> Handle(CreateAccountRequest request, CancellationToken cancellationToken = default)
     {
+        var userId = _contextAccessor?.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == "UserId");
+        if (string.IsNullOrWhiteSpace(userId?.Value))
+        {
+            throw new Exception("Missing user id");
+        }
         var newAccount = new Account
         {
             id = Guid.NewGuid().ToString(),
             name = request.Name,
-            userId = "debugUserID",
+            userId = userId.Value,
             currency = request.Currency,
             isDeleted = false
         };

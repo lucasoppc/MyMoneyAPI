@@ -8,19 +8,13 @@ using MyMoneyAPI.Services.Auth.Services;
 
 namespace MyMoneyAPI.Features.Users.Handlers;
 
-public class CreateUserHandler : IRequestHandler<CreateUserRequest, CreateUserResponse>
+public class CreateUserHandler(
+    IUserRepository userRepository,
+    IHashService hashService,
+    IJwtTokenProvider tokenProvider,
+    IClaimService claimService)
+    : IRequestHandler<CreateUserRequest, CreateUserResponse>
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IHashService _hashService;
-    private readonly IJwtTokenProvider _tokenProvider;
-
-    public CreateUserHandler(IUserRepository userRepository, IHashService hashService, IJwtTokenProvider tokenProvider)
-    {
-        _userRepository = userRepository;
-        _hashService = hashService;
-        _tokenProvider = tokenProvider;
-    }
-    
     public async Task<CreateUserResponse> Handle(CreateUserRequest request, CancellationToken cancellationToken)
     {
         var userEntity = new UserEntity
@@ -28,16 +22,19 @@ public class CreateUserHandler : IRequestHandler<CreateUserRequest, CreateUserRe
             id = Guid.NewGuid().ToString(),
             name = request.Name,
             email = request.Email,
-            passwordHash = _hashService.GenerateHash(request.Password),
+            passwordHash = hashService.GenerateHash(request.Password),
             defaultCurrency = request.DefaultCurrency
         };
 
-        userEntity = await _userRepository.CreateUserAsync(userEntity);
-
-        var emailClaim = new Claim(ClaimTypes.Email, userEntity.email);
-        var idClaim = new Claim(ClaimTypes.Name, userEntity.name);
-        string token = _tokenProvider.GenerateToken(new List<Claim> { idClaim, emailClaim }.ToArray());
-        return new CreateUserResponse(userEntity.id, userEntity.name, userEntity.email, userEntity.defaultCurrency,
+        await userRepository.CreateUserAsync(userEntity, cancellationToken);
+        
+        var userClaims = claimService.CreateUserClaims(userEntity);
+        var token = tokenProvider.GenerateToken(userClaims);
+        
+        return new CreateUserResponse(userEntity.id, 
+            userEntity.name, 
+            userEntity.email, 
+            userEntity.defaultCurrency,
             token);
     }
 }

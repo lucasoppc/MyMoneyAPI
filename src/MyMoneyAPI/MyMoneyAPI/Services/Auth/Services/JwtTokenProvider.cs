@@ -18,7 +18,7 @@ public class JwtTokenProvider : IJwtTokenProvider
         _jwtOptions = jwtOptions.Value;
     }
     
-    public string GenerateToken(Claim[] claims)
+    public string GenerateToken(params Claim[] claims)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
