@@ -5,19 +5,17 @@ using MyMoneyAPI.Features.Accounts.Responses;
 
 namespace MyMoneyAPI.Features.Accounts.Handlers;
 
-public class GetAccountHandler : IRequestHandler<GetUserAccountsRequest, GetUserAccountsResponse>
+public class GetAccountHandler(IAccountRepository accountRepository,
+    IHttpContextAccessor contextAccessor)
+    : IRequestHandler<GetUserAccountsRequest, GetUserAccountsResponse>
 {
-    private readonly IAccountRepository _accountRepository;
-
-    public GetAccountHandler(IAccountRepository accountRepository)
-    {
-        _accountRepository = accountRepository;
-    }
     
     public async Task<GetUserAccountsResponse> Handle(GetUserAccountsRequest request, CancellationToken cancellationToken = default)
     {
         var response = new GetUserAccountsResponse();
-        var accounts = await _accountRepository.GetUserAccountsAsync(request.AccountId);
+        
+        var userId = contextAccessor?.HttpContext?.User.FindFirst("UserId")?.Value;
+        var accounts = await accountRepository.GetUserAccountsAsync(userId);
 
         foreach (var account in accounts)
         {

@@ -25,9 +25,10 @@ public class AccountController : ControllerBase
     }
     
     [HttpGet]
-    public async Task<IActionResult> GetAccounts([FromQuery] string accountId)
+    [Authorize]
+    public async Task<IActionResult> GetAccounts()
     {
-        var request = new GetUserAccountsRequest(accountId);
+        var request = new GetUserAccountsRequest();
         var result = await _mediator.Send(request);
         return new OkObjectResult(result);
     }

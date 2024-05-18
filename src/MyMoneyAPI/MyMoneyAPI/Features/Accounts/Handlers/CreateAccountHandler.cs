@@ -1,4 +1,6 @@
 using MediatR;
+using MyMoneyAPI.Common.Constants;
+using MyMoneyAPI.Common.Exceptions;
 using MyMoneyAPI.Features.Accounts.Models;
 using MyMoneyAPI.Features.Accounts.Repositories;
 using MyMoneyAPI.Features.Accounts.Requests;
@@ -23,14 +25,21 @@ public class CreateAccountHandler : IRequestHandler<CreateAccountRequest, Create
         var userId = _contextAccessor?.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == "UserId");
         if (string.IsNullOrWhiteSpace(userId?.Value))
         {
-            throw new Exception("Missing user id");
+            throw new InvalidUserInputException("Missing user id");
         }
+
+        var currency = request.Currency;
+        if (!CurrencyConstants.IsValidCurrency(ref currency))
+        {
+            throw new InvalidUserInputException("Invalid currency");
+        }
+        
         var newAccount = new Account
         {
             id = Guid.NewGuid().ToString(),
             name = request.Name,
             userId = userId.Value,
-            currency = request.Currency,
+            currency = currency,
             isDeleted = false
         };
         

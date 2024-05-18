@@ -2,6 +2,7 @@ using Microsoft.OpenApi.Models;
 using MyMoneyAPI.Features.Accounts.Repositories;
 using MyMoneyAPI.Features.Transactions.Repositories;
 using MyMoneyAPI.Features.Users.Repositories;
+using MyMoneyAPI.Middlewares;
 using MyMoneyAPI.Services.ChangeFeedProcessors;
 using MyMoneyAPI.Services.Auth;
 using MyMoneyAPI.Services.Auth.Configuration;
@@ -62,6 +63,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthorization();
