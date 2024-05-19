@@ -4,7 +4,7 @@ using MyMoneyAPI.Features.Users.Requests;
 
 namespace MyMoneyAPI.Features.Users.Controllers.V10;
 
-[Route("api/user")]
+[Route("api/v1.0/users")]
 [ApiController]
 public class UserController : ControllerBase
 {
