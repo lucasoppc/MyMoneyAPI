@@ -8,21 +8,14 @@ using MyMoneyAPI.Features.Accounts.Responses;
 
 namespace MyMoneyAPI.Features.Accounts.Handlers;
 
-public class CreateAccountHandler : IRequestHandler<CreateAccountRequest, CreateAccountResponse>
+public class CreateAccountHandler(IAccountRepository accountRepository,
+    IHttpContextAccessor contextAccessor) 
+    : IRequestHandler<CreateAccountRequest, CreateAccountResponse>
 {
-    private readonly IAccountRepository _accountRepository;
-    private readonly IHttpContextAccessor _contextAccessor;
-
-    public CreateAccountHandler(IAccountRepository accountRepository, IHttpContextAccessor httpContextAccessor)
-    {
-        _accountRepository = accountRepository;
-        _contextAccessor = httpContextAccessor;
-
-    }
     
     public async Task<CreateAccountResponse> Handle(CreateAccountRequest request, CancellationToken cancellationToken = default)
     {
-        var userId = _contextAccessor?.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == "UserId");
+        var userId = contextAccessor?.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == "UserId");
         if (string.IsNullOrWhiteSpace(userId?.Value))
         {
             throw new InvalidUserInputException("Missing user id");
@@ -43,7 +36,7 @@ public class CreateAccountHandler : IRequestHandler<CreateAccountRequest, Create
             isDeleted = false
         };
         
-        var result = await _accountRepository.CreateAccountAsync(newAccount);
+        var result = await accountRepository.CreateAccountAsync(newAccount);
 
         return new CreateAccountResponse
         {
