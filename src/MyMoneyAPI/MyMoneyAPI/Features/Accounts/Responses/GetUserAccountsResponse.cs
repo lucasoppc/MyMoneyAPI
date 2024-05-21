@@ -4,5 +4,5 @@ namespace MyMoneyAPI.Features.Accounts.Responses;
 
 public class GetUserAccountsResponse
 {
-    public List<Account> UserAccounts { get; } = new List<Account>();
+    public List<Account> Accounts { get; } = new List<Account>();
 }

@@ -19,7 +19,7 @@ public class GetAccountHandler(IAccountRepository accountRepository,
 
         foreach (var account in accounts)
         {
-            response.UserAccounts.Add(account);
+            response.Accounts.Add(account);
         }
 
         return response;

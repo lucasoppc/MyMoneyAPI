@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using MediatR;
+using MyMoneyAPI.Common.Exceptions;
 using MyMoneyAPI.Features.Users.Models;
 using MyMoneyAPI.Features.Users.Repositories;
 using MyMoneyAPI.Features.Users.Requests;
@@ -26,6 +27,12 @@ public class CreateUserHandler(
             defaultCurrency = request.DefaultCurrency
         };
 
+        var existingUser = await userRepository.GetUserByEmailAsync(request.Email, cancellationToken);
+        if (existingUser != null)
+        {
+            throw new InvalidUserInputException("User with this email already exists.");
+        }
+        
         await userRepository.CreateUserAsync(userEntity, cancellationToken);
         
         var userClaims = claimService.CreateUserClaims(userEntity);
