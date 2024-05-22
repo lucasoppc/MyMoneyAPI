@@ -5,7 +5,6 @@ using MyMoneyAPI.Features.Users.Repositories;
 using MyMoneyAPI.Middlewares;
 using MyMoneyAPI.Services.ChangeFeedProcessors;
 using MyMoneyAPI.Services.Auth;
-using MyMoneyAPI.Services.Auth.Configuration;
 using MyMoneyAPI.Services.CosmosDB.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,11 +23,21 @@ builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddHostedService<TransactionsChangeFeedProcessor>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+});
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-
-    // Definir el esquema de seguridad
+    
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -56,6 +65,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+app.UseCors("AllowAllOrigins");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -71,6 +81,7 @@ app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
 });
+
 
 
 
