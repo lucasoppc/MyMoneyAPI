@@ -19,7 +19,7 @@ public class TransactionsController : ControllerBase
     public async Task<IActionResult> CreateTransaction([FromBody] CreateTransactionRequest request)
     {
         var response = await _mediator.Send(request);
-        return new CreatedResult();
+        return new OkObjectResult(response);
     }
     
     [HttpGet]

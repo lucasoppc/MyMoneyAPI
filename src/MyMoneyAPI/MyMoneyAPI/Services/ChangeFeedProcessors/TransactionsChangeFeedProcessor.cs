@@ -40,23 +40,30 @@ public class TransactionsChangeFeedProcessor : IHostedService, IDisposable
             .GetChangeFeedProcessorBuilder("TransactionsChangeFeedProcessor",
                 async Task (IReadOnlyCollection<Transaction> transactions, CancellationToken cancellationToken = default) =>
                 {
-                    foreach (var transaction in transactions)
+                    try
                     {
-                        _logger.LogInformation("Trying to update account @accountId with amount @amount from a new transaction...", transaction.accountId, transaction.amount);
-                        
-                        var account = await _cosmosDBService.AccountsContainer.ReadItemAsync<Account>(transaction.accountId,
-                            new PartitionKey(transaction.userId), cancellationToken: cancellationToken);
-                        
-                        if(account.StatusCode == HttpStatusCode.NotFound)
+                        foreach (var transaction in transactions)
                         {
-                            _logger.LogWarning("Account @accountId not found, skipping transaction...", transaction.accountId);
-                            return;
+                            _logger.LogInformation("Trying to update account {0} with amount {1} from a new transaction...", transaction.accountId, transaction.amount);
+                        
+                            var account = await _cosmosDBService.AccountsContainer.ReadItemAsync<Account>(transaction.accountId,
+                                new PartitionKey(transaction.userId), cancellationToken: cancellationToken);
+                        
+                            if(account.StatusCode == HttpStatusCode.NotFound)
+                            {
+                                _logger.LogWarning("Account {0} not found, skipping transaction...", transaction.accountId);
+                                return;
+                            }
+                        
+                            await _cosmosDBService.AccountsContainer.PatchItemAsync<Account>(transaction.accountId, new PartitionKey(transaction.userId),
+                                new[] { PatchOperation.Set("/amount", (account.Resource.amount + transaction.amount))}, cancellationToken: cancellationToken);
+                        
+                            _logger.LogInformation("Successfully updated account {0} with amount {0} from a new transaction...", transaction.accountId, transaction.amount);
                         }
-                        
-                        await _cosmosDBService.AccountsContainer.PatchItemAsync<Account>(transaction.accountId, new PartitionKey(transaction.userId),
-                            new[] { PatchOperation.Set("/amount", (account.Resource.amount + transaction.amount))}, cancellationToken: cancellationToken);
-                        
-                        _logger.LogInformation("Successfully updated account @accountId with amount @amount from a new transaction...", transaction.accountId, transaction.amount);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError("An error occurred while processing transactions change feed: {0}", ex.Message);
                     }
                 })
             .WithInstanceName("MyMoneyAPI")
