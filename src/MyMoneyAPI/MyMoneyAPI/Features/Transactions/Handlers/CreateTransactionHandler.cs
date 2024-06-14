@@ -37,7 +37,7 @@ public class CreateTransactionHandler(ITransactionRepository transactionReposito
             description = request.Description,
             amount = request.Amount,
             currency = request.Currency,
-            date = request.Date.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
+            date = request.Date.ToString("O")
         };
 
         var createdTransaction = await transactionRepository.CreateTransactionAsync(newTransaction);
