@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using MyMoneyAPI.Common.Exceptions;
 using MyMoneyAPI.Features.Accounts.Repositories;
@@ -36,7 +37,7 @@ public class CreateTransactionHandler(ITransactionRepository transactionReposito
             description = request.Description,
             amount = request.Amount,
             currency = request.Currency,
-            date = request.Date.ToString("dd-MM-yyyy HH:mm:ss")
+            date = request.Date.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
         };
 
         var createdTransaction = await transactionRepository.CreateTransactionAsync(newTransaction);
