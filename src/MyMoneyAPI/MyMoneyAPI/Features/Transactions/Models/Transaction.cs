@@ -13,4 +13,11 @@ public class Transaction
     public string currency { get; set; }
     public decimal amount { get; set; }
     public string date { get; set; }
+    public bool isTransference { get; set; } = false;
+    public TransferDetails transferDetails { get; set; }
+}
+
+public class TransferDetails
+{
+    public string toAccountId { get; set; }
 }

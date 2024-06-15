@@ -25,8 +25,6 @@ public class AccountRepository : IAccountRepository
         var query = _cosmosDbService.AccountsContainer.GetItemLinqQueryable<Account>()
             .Where(a => a.userId == userId)
             .ToFeedIterator();
-
-
         
         while (query.HasMoreResults)
         {
@@ -35,5 +33,47 @@ public class AccountRepository : IAccountRepository
         }
 
         return results;
+    }
+    
+    public async Task<Account> GetUserAccountAsync(string accountId)
+    {
+        var result = new Account();
+        var query = _cosmosDbService.AccountsContainer.GetItemLinqQueryable<Account>()
+            .Where(a => a.id == accountId)
+            .ToFeedIterator();
+        
+        while (query.HasMoreResults)
+        {
+            var items = await query.ReadNextAsync();
+            result = items.FirstOrDefault();
+        }
+
+        return result;
+    }
+    
+    public async Task SaveAccountAsync(Account account)
+    {
+        var patchOperations = new List<PatchOperation>();
+        var properties = typeof(Account).GetProperties();
+        var excludedProperties = new List<string>{"id", "accountId", "userId"};
+
+        foreach (var property in properties)
+        {
+            if(excludedProperties.Contains(property.Name))
+            {
+                continue;
+            }
+            var value = property.GetValue(account);
+            var path = $"/{property.Name}";
+            patchOperations.Add(PatchOperation.Replace(path, value));
+        }
+
+        await _cosmosDbService.AccountsContainer.PatchItemAsync<Account>(
+            account.id,
+            new PartitionKeyBuilder()
+                .Add(account.userId)
+                .Build(),
+            patchOperations
+        );
     }
 }

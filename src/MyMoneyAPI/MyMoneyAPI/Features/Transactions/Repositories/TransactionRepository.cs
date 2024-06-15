@@ -1,3 +1,4 @@
+using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using MyMoneyAPI.Services.CosmosDB;
 using MyMoneyAPI.Features.Transactions.Models;
@@ -17,7 +18,7 @@ public class TransactionRepository : ITransactionRepository
     {
         return await _cosmosDbService.TransactionsContainer.CreateItemAsync(transaction);
     }
-
+    
     public async Task<List<Transaction>> GetTransactionsAsync(string accountId)
     {
         var results = new List<Transaction>();

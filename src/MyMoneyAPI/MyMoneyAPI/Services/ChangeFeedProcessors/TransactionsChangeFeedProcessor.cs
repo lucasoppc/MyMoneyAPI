@@ -1,73 +1,59 @@
 using System.Collections.ObjectModel;
 using System.Net;
+using MediatR;
 using Microsoft.Azure.Cosmos;
 using MyMoneyAPI.Features.Accounts.Models;
+using MyMoneyAPI.Features.Transactions.Events;
 using MyMoneyAPI.Features.Transactions.Models;
 using MyMoneyAPI.Services.CosmosDB;
 namespace MyMoneyAPI.Services.ChangeFeedProcessors;
 
-public class TransactionsChangeFeedProcessor : IHostedService, IDisposable
+public class TransactionsChangeFeedProcessor 
+    : ChangeFeedHostedServiceBase<Transaction>
 {
-    private ICosmosDBService _cosmosDBService;
-    private ChangeFeedProcessor _changeFeedProcessor;
-    private ILogger<TransactionsChangeFeedProcessor> _logger;
+    private readonly ICosmosDBService _cosmosDbService;
+    private readonly IMediator _mediator;
+    private readonly ILogger<TransactionsChangeFeedProcessor> _logger;
+    
+    protected sealed override Container Container { get; set; }
+    protected sealed override Container LeaseContainer { get; set; }
+    protected sealed override string InstanceName { get; set; }
+    protected sealed override string ChangeFeedProcessorName { get; set; }
 
-    public TransactionsChangeFeedProcessor(ICosmosDBService cosmosDBService, ILogger<TransactionsChangeFeedProcessor> logger)
+    public TransactionsChangeFeedProcessor(ICosmosDBService cosmosDbService, 
+        IMediator mediator,
+        ILogger<TransactionsChangeFeedProcessor> logger)
     {
-        _cosmosDBService = cosmosDBService;
+        _cosmosDbService = cosmosDbService;
+        _mediator = mediator;
         _logger = logger;
-        _changeFeedProcessor = GetChangeFeedProcessor();
-    }
-    
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        await _changeFeedProcessor.StartAsync();
+        Container = _cosmosDbService.TransactionsContainer;
+        LeaseContainer = _cosmosDbService.TransactionsLeasesContainer;
+        InstanceName = "MyMoneyAPI";
+        ChangeFeedProcessorName = "Transactions Change Feed Processor";
     }
 
-    public async Task StopAsync(CancellationToken cancellationToken)
+    protected override async Task OnChangeHandler(IReadOnlyCollection<Transaction> documents, CancellationToken cancellationToken)
     {
-        await _changeFeedProcessor.StopAsync();
-    }
-    
-    public void Dispose()
-    {
-        _changeFeedProcessor.StopAsync().Wait();
-    }
-    
-    private ChangeFeedProcessor GetChangeFeedProcessor()
-    {
-        return _cosmosDBService.TransactionsContainer
-            .GetChangeFeedProcessorBuilder("TransactionsChangeFeedProcessor",
-                async Task (IReadOnlyCollection<Transaction> transactions, CancellationToken cancellationToken = default) =>
+        try
+        {
+            List<Task> tasks = [];
+            
+            foreach (var transaction in documents)
+            {
+                tasks.Add(_mediator.Publish(new TransactionAddedEvent(transaction), cancellationToken));
+
+                if (transaction.isTransference)
                 {
-                    try
-                    {
-                        foreach (var transaction in transactions)
-                        {
-                            _logger.LogInformation("Trying to update account {0} with amount {1} from a new transaction...", transaction.accountId, transaction.amount);
-                        
-                            var account = await _cosmosDBService.AccountsContainer.ReadItemAsync<Account>(transaction.accountId,
-                                new PartitionKey(transaction.userId), cancellationToken: cancellationToken);
-                        
-                            if(account.StatusCode == HttpStatusCode.NotFound)
-                            {
-                                _logger.LogWarning("Account {0} not found, skipping transaction...", transaction.accountId);
-                                return;
-                            }
-                        
-                            await _cosmosDBService.AccountsContainer.PatchItemAsync<Account>(transaction.accountId, new PartitionKey(transaction.userId),
-                                new[] { PatchOperation.Set("/amount", (account.Resource.amount + transaction.amount))}, cancellationToken: cancellationToken);
-                        
-                            _logger.LogInformation("Successfully updated account {0} with amount {0} from a new transaction...", transaction.accountId, transaction.amount);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError("An error occurred while processing transactions change feed: {0}", ex.Message);
-                    }
-                })
-            .WithInstanceName("MyMoneyAPI")
-            .WithLeaseContainer(_cosmosDBService.TransactionsLeasesContainer)
-            .Build();
+                    tasks.Add(_mediator.Publish(new TransferEvent(transaction), cancellationToken));
+                }
+            }
+
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("An error occurred while processing transactions change feed: {0}", ex.Message);
+        }
     }
 }

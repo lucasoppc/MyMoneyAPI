@@ -32,4 +32,17 @@ public class AccountController : ControllerBase
         var result = await _mediator.Send(request);
         return new OkObjectResult(result);
     }
+    
+    [HttpDelete("{accountId}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteAccount(string accountId)
+    {
+        var request = new UpdateAccountRequest
+        {
+            Id = accountId,
+            IsDeleted = true
+        };
+        var result = await _mediator.Send(request);
+        return new OkObjectResult(result);
+    }
 }

@@ -5,7 +5,7 @@ using MyMoneyAPI.Features.Transactions.Requests;
 namespace MyMoneyAPI.Features.Transactions.Controllers.V10;
 
 [ApiController]
-[Route("api/V1.0/Transactions")]
+[Route("api/V1.0/transactions")]
 public class TransactionsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -23,9 +23,16 @@ public class TransactionsController : ControllerBase
     }
     
     [HttpGet]
-    public async Task<IActionResult> GetTrnsactions([FromQuery] GetTransactions request)
+    public async Task<IActionResult> GetTransactions([FromQuery] GetTransactions request)
     {
         var response = await _mediator.Send(request);
+        return new OkObjectResult(response);
+    }
+
+    [HttpPost("transfer")]
+    public async Task<IActionResult> TransferToAccount([FromBody] TransferToAccountRequest transferToAccountRequest)
+    {
+        var response = await _mediator.Send(transferToAccountRequest);
         return new OkObjectResult(response);
     }
 }

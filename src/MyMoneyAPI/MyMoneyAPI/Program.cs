@@ -18,9 +18,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddCosmosDB(builder.Configuration.GetSection("CosmosDB").Get<CosmosDBConfigOptions>());
 
-builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddSingleton<ITransactionRepository, TransactionRepository>();
+builder.Services.AddSingleton<IAccountRepository, AccountRepository>();
+builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddHostedService<TransactionsChangeFeedProcessor>();
 
 builder.Services.AddCors(options =>

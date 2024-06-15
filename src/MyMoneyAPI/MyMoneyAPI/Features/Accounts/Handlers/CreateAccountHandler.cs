@@ -31,6 +31,7 @@ public class CreateAccountHandler(IAccountRepository accountRepository,
         {
             id = Guid.NewGuid().ToString(),
             name = request.Name,
+            bankAccount = request.BankAccount,
             userId = userId.Value,
             currency = currency,
             isDeleted = false
@@ -38,11 +39,6 @@ public class CreateAccountHandler(IAccountRepository accountRepository,
         
         var result = await accountRepository.CreateAccountAsync(newAccount);
 
-        return new CreateAccountResponse
-        {
-            Id = result.id,
-            Name = result.name,
-            Currency = result.currency
-        };
+        return new CreateAccountResponse(result);
     }
 }
