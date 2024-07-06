@@ -45,4 +45,12 @@ public class AccountController : ControllerBase
         var result = await _mediator.Send(request);
         return new OkObjectResult(result);
     }
+
+    [HttpPost("update")]
+    [Authorize]
+    public async Task<IActionResult> UpdateAccount([FromBody] UpdateAccountRequest request)
+    {
+        var result = await _mediator.Send(request);
+        return new OkObjectResult(result);
+    }
 }

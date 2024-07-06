@@ -23,7 +23,7 @@ public class AccountRepository : IAccountRepository
     {
         var results = new List<Account>();
         var query = _cosmosDbService.AccountsContainer.GetItemLinqQueryable<Account>()
-            .Where(a => a.userId == userId)
+            .Where(a => a.userId == userId & !a.isDeleted)
             .ToFeedIterator();
         
         while (query.HasMoreResults)
@@ -39,7 +39,7 @@ public class AccountRepository : IAccountRepository
     {
         var result = new Account();
         var query = _cosmosDbService.AccountsContainer.GetItemLinqQueryable<Account>()
-            .Where(a => a.id == accountId)
+            .Where(a => a.id == accountId && !a.isDeleted)
             .ToFeedIterator();
         
         while (query.HasMoreResults)
