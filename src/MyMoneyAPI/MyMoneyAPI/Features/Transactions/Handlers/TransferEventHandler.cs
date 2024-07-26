@@ -15,11 +15,25 @@ public class TransferEventHandler(ILogger<TransferEventHandler> logger,
 {
     public async Task Handle(TransferEvent notification, CancellationToken cancellationToken)
     {
+        string toAccountName = string.Empty;
+        
         try
         {
             var senderTransaction = notification.Transaction;
             
-            var toAccount = await accountRepository.GetUserAccountAsync(senderTransaction.transferDetails.toAccountId);
+            var getAccountTo = accountRepository.GetUserAccountAsync(senderTransaction.transferDetails.toAccountId);
+            var getAccountFrom = accountRepository.GetUserAccountAsync(senderTransaction.accountId);
+            
+            await Task.WhenAll(getAccountTo, getAccountFrom);
+            
+            var fromAccount = getAccountFrom.Result;
+            var toAccount = getAccountTo.Result;
+            toAccountName = toAccount.name;
+            
+            if (fromAccount is null)
+            {
+                throw new InvalidUserInputException($"Account {senderTransaction.accountId} not found");
+            }
             if (toAccount is null)
             {
                 throw new InvalidUserInputException($"Account {senderTransaction.transferDetails.toAccountId} not found");
@@ -30,10 +44,10 @@ public class TransferEventHandler(ILogger<TransferEventHandler> logger,
                 accountId = senderTransaction.transferDetails.toAccountId,
                 userId = senderTransaction.userId,
                 isTransference = false,
-                amount = senderTransaction.amount * -1,
+                amount = senderTransaction.amount * -1, // Reversing because the transaction is stores negative in the account from, so here we do credit.
                 currency = senderTransaction.currency,
                 date = DateTime.UtcNow.ToString("O"),
-                description = "Transference from account " + senderTransaction.accountId,
+                description = "Transference received from: " + fromAccount.name,
                 id = Guid.NewGuid().ToString()
             };
             
@@ -41,7 +55,7 @@ public class TransferEventHandler(ILogger<TransferEventHandler> logger,
         }
         catch (Exception e)
         {
-            await mediator.Publish(new TransactionFailedEvent(e.Message, notification.Transaction), cancellationToken);
+            await mediator.Publish(new TransactionFailedEvent(e.Message, toAccountName, notification.Transaction), cancellationToken);
             
             logger.LogError("Error while processing transfer event: {0}", e.Message);
             logger.LogError("Transference from account {0} to account {1} failed. Rolling back transaction...", 

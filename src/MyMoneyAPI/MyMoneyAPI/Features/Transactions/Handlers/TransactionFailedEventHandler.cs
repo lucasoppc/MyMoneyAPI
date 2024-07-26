@@ -19,7 +19,7 @@ public class TransactionFailedEventHandler(ITransactionRepository transactionRep
             amount = failedTransferenceTransaction.amount * -1,
             currency = failedTransferenceTransaction.currency,
             date = DateTime.UtcNow.ToString("O"),
-            description = $"Failed transference to account {failedTransferenceTransaction.transferDetails.toAccountId}, reason: {notification.Reason}",
+            description = $"Failed transference to: {notification.ToAccountName}",
         };
 
         await transactionRepository.CreateTransactionAsync(creditTransaction);

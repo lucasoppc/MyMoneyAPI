@@ -22,9 +22,20 @@ public class TransferToAccountHandler(IAccountRepository accountRepository,
             throw new InvalidUserInputException("Missing user id");
         }
 
-        var accountFrom = await accountRepository.GetUserAccountAsync(request.FromAccountId);
+        var getAccountFrom = accountRepository.GetUserAccountAsync(request.FromAccountId);
+        var getAccountTo = accountRepository.GetUserAccountAsync(request.ToAccountId);
 
+        await Task.WhenAll(getAccountFrom, getAccountTo);
+        
+        var accountFrom = getAccountFrom.Result;
+        var accountTo = getAccountTo.Result;
+        
         if (accountFrom is null || accountFrom.userId != userId.Value)
+        {
+            throw new InvalidUserInputException("Account doesn't exists or doesn't belong to the user");
+        }
+        
+        if (accountTo is null || accountTo.userId != userId.Value)
         {
             throw new InvalidUserInputException("Account doesn't exists or doesn't belong to the user");
         }
@@ -38,7 +49,7 @@ public class TransferToAccountHandler(IAccountRepository accountRepository,
         {
             accountId = request.FromAccountId,
             userId = userId.Value,
-            description = "Transference to account " + request.ToAccountId,
+            description = "Transference to: " + accountTo.name,
             amount = request.Amount * -1,
             date = DateTime.UtcNow.ToString("O"),
             id = Guid.NewGuid().ToString(),
